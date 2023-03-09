@@ -1,0 +1,27 @@
+name: Grant Access to Repository for New Members
+
+on:
+  workflow_dispatch:
+  member:
+    types: [added]
+
+jobs:
+  grant-access:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if member belongs to the organization
+        uses: peter-evans/org-member-check@v2
+        id: check-member
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          member-name: ${{ github.event.member.login }}
+          organization-name: XM-OS
+
+      - name: Grant repository access to member
+        if: ${{ steps.check-member.outputs.member }}
+        env:
+          REPO: XM-OS/.github
+        run: |
+          curl -X PUT -H "Authorization: token ${{ secrets.AUTOMATION_ACCESS_TOKEN }}" \
+            "https://api.github.com/repos/$REPO/collaborators/${{ github.event.member.login }}" \
+            -d '{"permission":"write"}'
